@@ -46,6 +46,10 @@ public class AdderClient {
         return c1.send(S.S, Bye.Bye);
     }
 
+    public void cleanup() throws IOException, ScribRuntimeException {
+        this.client.disconnect(S.S);
+    }
+
     public static void main(String[] args) throws Exception {
         AdderClient client = new AdderClient(args[0], Integer.parseInt(args[1]));
         Adder_C_1 SEND;
@@ -62,6 +66,7 @@ public class AdderClient {
             switch (inputs.length) {
                 case 1:
                     if (inputs[0].equals("exit") || inputs[0].equals("quit")) {
+                        System.out.println("AdderClient: Terminating...");
                         client.terminate(SEND);
                         break repl;
                     }
@@ -79,5 +84,7 @@ public class AdderClient {
                     System.out.println("AdderClient: Command not found");
             }
         }
+        System.out.println("AdderClient: Terminated. Cleaning up resources...");
+        client.cleanup();
     }
 }

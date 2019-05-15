@@ -31,7 +31,6 @@ public class AdderServer {
         this.socket = new SocketChannelServer(port);
         server.accept(socket, C.C);
         return new Adder_S_1(server);
-
     }
 
     public void run(Adder_S_1 s1) throws ScribRuntimeException, IOException, ClassNotFoundException {
@@ -45,18 +44,21 @@ public class AdderServer {
                         .send(C.C, Res.Res, x.val+y.val);
                     break;
                 case Bye: cases.receive(Bye.Bye);
-                return;
+             //   s1 = new Adder_S_1(server);
+                    return;
             }
         }
     }
 
     public void disconnect() throws IOException, ScribRuntimeException {
-        this.server.disconnect(C.C);
-        this.socket.close();
+
+     //   this.server.disconnect(C.C);
+         this.socket.close();
     }
 
     public static void main(String[] args) throws Exception {
         System.out.println("AdderServer: Starting...");
+
         while (true) {
             AdderServer server = new AdderServer(Integer.parseInt(args[0]));
             System.out.println("AdderServer: Successfully instantiated at port " + args[0]);
