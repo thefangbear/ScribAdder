@@ -22,7 +22,6 @@ public class AdderClient {
     private Adder adder;
     private String addr;
     private MPSTEndpoint<Adder, C> client;
-    private Adder_C_1 c1State = null;
     private int port;
 
     public AdderClient(String addr, int port) throws IOException, ScribRuntimeException {
@@ -32,48 +31,49 @@ public class AdderClient {
         this.port = port;
     }
 
-    public void connect() throws IOException, ScribRuntimeException {
+    public Adder_C_1 connect() throws IOException, ScribRuntimeException {
         this.client.request(S.S, SocketChannelEndpoint::new, addr, port);
-        this.c1State = new Adder_C_1(this.client);
+        return new Adder_C_1(this.client);
     }
 
     public MPSTEndpoint<Adder, C> getClient() { return this.client; }
 
-    public Adder_C_2 add(int a, int b) throws ScribRuntimeException, IOException {
-        if (c1State == null) throw new ScribRuntimeException("AdderClient is not connected");
-        return c1State.send(S.S, Add.Add, (Integer)a, (Integer)b);
+    public Adder_C_2 add(Adder_C_1 c1, int a, int b) throws ScribRuntimeException, IOException {
+        return c1.send(S.S, Add.Add, (Integer)a, (Integer)b);
     }
 
-    public EndSocket terminate() throws ScribRuntimeException, IOException {
-        if (c1State == null) throw new ScribRuntimeException("AderClient is not connected");
-        return c1State.send(S.S, Bye.Bye);
+    public EndSocket terminate(Adder_C_1 c1) throws ScribRuntimeException, IOException {
+        return c1.send(S.S, Bye.Bye);
     }
 
     public static void main(String[] args) throws Exception {
         AdderClient client = new AdderClient(args[0], Integer.parseInt(args[1]));
+        Adder_C_1 SEND;
+        Adder_C_2 RECV;
         BufferedReader IN = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter OUT = new PrintWriter(new OutputStreamWriter(System.out));
         String[] inputs;
 
         System.out.println("AdderClient: Successfully instantiated.");
-        client.connect();
+        SEND = client.connect();
         System.out.println("AdderClient: Successfully connected to server.");
-        while (true) {
+        repl: while (true) {
             inputs = IN.readLine().split(" ");
             switch (inputs.length) {
                 case 1:
                     if (inputs[0].equals("exit") || inputs[0].equals("quit")) {
-                        client.terminate();
-                        break;
-                    } else {
-                        System.out.println("AdderClient: Command not found");
-                        continue;
+                        client.terminate(SEND);
+                        break repl;
                     }
                 case 2: {
-                    int a = Integer.parseInt(inputs[0]), b = Integer.parseInt(inputs[1]);
-                    Buf<Integer> iBuf = new Buf<>();
-                    client.add(a, b).receive(S.S, Res.Res, iBuf);
-                    System.out.println("res := " + iBuf.val);
+                    try {
+                        int a = Integer.parseInt(inputs[0]), b = Integer.parseInt(inputs[1]);
+                        Buf<Integer> iBuf = new Buf<>();
+                        RECV = client.add(SEND, a, b);
+                        SEND = RECV.receive(S.S, Res.Res, iBuf);
+                        System.out.println("res := " + iBuf.val);
+                        continue;
+                    } catch (Exception ignored) {}
                 }
                 default:
                     System.out.println("AdderClient: Command not found");

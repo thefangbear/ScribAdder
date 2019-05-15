@@ -20,21 +20,21 @@ import static org.scribble.examples.adder.Adder.Adder.Add;
 public class AdderServer {
 
     int port;
-    private Adder adder;
     MPSTEndpoint<Adder, S> server;
+    SocketChannelServer socket;
     public AdderServer(int port) throws IOException, ScribRuntimeException {
         this.port = port;
-        this.adder = new Adder();
-        this.server = new MPSTEndpoint<>(adder, S.S, new ObjectStreamFormatter());
+        this.server = new MPSTEndpoint<>(new Adder(), S.S, new ObjectStreamFormatter());
     }
 
-    Adder_S_1 accept() throws IOException, ScribRuntimeException {
-        server.accept(new SocketChannelServer(port), C.C)
+    public Adder_S_1 accept() throws IOException, ScribRuntimeException {
+        this.socket = new SocketChannelServer(port);
+        server.accept(socket, C.C);
         return new Adder_S_1(server);
 
     }
 
-    private void run(Adder_S_1 s1) throws ScribRuntimeException, IOException, ClassNotFoundException {
+    public void run(Adder_S_1 s1) throws ScribRuntimeException, IOException, ClassNotFoundException {
         Buf<Integer> x = new Buf<>();
         Buf<Integer> y = new Buf<>();
         while (true) {
@@ -50,7 +50,21 @@ public class AdderServer {
         }
     }
 
-    public static void main(String[] args) {
+    public void disconnect() throws IOException, ScribRuntimeException {
+        this.server.disconnect(C.C);
+        this.socket.close();
+    }
 
+    public static void main(String[] args) throws Exception {
+        System.out.println("AdderServer: Starting...");
+        while (true) {
+            AdderServer server = new AdderServer(Integer.parseInt(args[0]));
+            System.out.println("AdderServer: Successfully instantiated at port " + args[0]);
+            Adder_S_1 s1 = server.accept();
+            System.out.println("AdderServer: Accepted (1) connection.");
+            server.run(s1);
+            server.disconnect();
+            System.out.println("AdderServer: Served (1) connection. Repeating...");
+        }
     }
 }
